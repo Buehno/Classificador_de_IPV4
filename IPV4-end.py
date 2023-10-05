@@ -6,7 +6,8 @@ from tkinter import filedialog
 
 def salvar_informacoes_ip():
     ip = ip_entry.get()
-#o primeiro numero do ip  no  caso (ex:192.1.0.16/19) 192 se enquandra  em classe A: 1 - 128 CLasse B: 129 - 192 Classe C: 192 - 255. Nesse caso um  ip de  classe B
+# o primeiro numero do ip  no  caso (ex:192.1.0.16/19) 192 se enquandra  em classe A: 1 - 128 CLasse B: 129 - 192 Classe C: 192 - 255. Nesse caso um  ip de  classe B
+
     def Classe_IP(ip):
         ip_parts = ip.split('.')
 
@@ -18,7 +19,8 @@ def salvar_informacoes_ip():
             classe = "Classe C"
 
         return classe
-#classificador de rede  segue a mesma logica sendo numeros de 8 a 16 considerados classe  A , 16 a 24 considerados  Classe B e 25 a 32 considerados classe C 
+# classificador de rede  segue a mesma logica sendo numeros de 8 a 16 considerados classe  A , 16 a 24 considerados  Classe B e 25 a 32 considerados classe C
+
     def Classe_Rede(ip):
         ip_parts = ip.split('/')
         prefixo = int(ip_parts[-1])
@@ -31,7 +33,8 @@ def salvar_informacoes_ip():
             classe_rede = "Classe C"
 
         return classe_rede
-#sub redes são os numros de 1 a 32 exeto os numeros  8, 16, 32
+# sub redes são os numros de 1 a 32 exeto os numeros  8, 16, 32
+
     def classe_sub_rede(ip):
         ip_parts = ip.split('/')
         prefixo = int(ip_parts[-1])
@@ -44,15 +47,15 @@ def salvar_informacoes_ip():
     def calculo_mascara(ip):
         ip_parts = ip.split('/')
         prefixo = int(ip_parts[-1])
-#pega o prefixo apos a barraa e subtrai de acordo  com   o tamnho seguindo  a lei das classes ex:/19
+# pega o prefixo apos a barraa e subtrai de acordo  com   o tamnho seguindo  a lei das classes ex:/19
         if prefixo < 16:
             calc = prefixo - 8
         elif prefixo <= 24:
-            calc = prefixo - 16 
+            calc = prefixo - 16
         else:
             calc = prefixo - 32
-#segindo com o ex: /19 pertence a classe B da sub rede então  faremos assim 19 - 16 sobrando 3 a quantidade de bits que iremos somar de acordo com a  tabela 1 - 128 2 - 64 ... 
-        if calc == 1: 
+# segindo com o ex: /19 pertence a classe B da sub rede então  faremos assim 19 - 16 sobrando 3 a quantidade de bits que iremos somar de acordo com a  tabela 1 - 128 2 - 64 ...
+        if calc == 1:
             CM = 2**7
         elif calc == 2:
             CM = 2**7 + 2**6
@@ -68,7 +71,7 @@ def salvar_informacoes_ip():
             CM = 2**7 + 2**6 + 2**5 + 2**4 + 2**3 + 2**2 + 2**1
         else:
             CM = "erro"  # Definindo um valor padrão para o caso de calc ser inválido
-#aki definimos qual o tipo de classe sera a nossa maskara no caso qual layout vamos usar de acordo com a CLasse da Rede
+# aki definimos qual o tipo de classe sera a nossa maskara no caso qual layout vamos usar de acordo com a CLasse da Rede
         if Classe_Rede(ip) == "Classe A":
             mascara_rede = f"255.{CM}.0.0"
         elif Classe_Rede(ip) == "Classe B":
@@ -79,12 +82,14 @@ def salvar_informacoes_ip():
             mascara_rede = "erro"  # Definindo um valor padrão para o caso de classe de rede inválida
 
         return mascara_rede
-#aki pegaremos o id da rede que seria a primeira parte do ip fora o prefixo ex:/19
+# aki pegaremos o id da rede que seria a primeira parte do ip fora o prefixo ex:/19
+
     def Id_da_rede(ip):
         partes = ip.split('/')
         parte_ip = partes[0]
         return parte_ip
-#para acharmos o wild card é nessesario subtrair 255.255.255.255 - mascara de rede que achamos  anteriormente.
+# para acharmos o wild card é nessesario subtrair 255.255.255.255 - mascara de rede que achamos  anteriormente.
+
     def wild_card():
         mascara = calculo_mascara(ip)
         partes_mascara = mascara.split('.')
@@ -96,7 +101,8 @@ def salvar_informacoes_ip():
 
         wildcard_str = ".".join(wildcard)
         return wildcard_str
-#ao somar o id da rede com o wildcard temos o broadcast
+# ao somar o id da rede com o wildcard temos o broadcast
+
     def broad_cast():
         wildcard_parts = wild_card().split('.')
         id_parts = Id_da_rede(ip).split('.')
@@ -109,7 +115,7 @@ def salvar_informacoes_ip():
 
         broadcast = ".".join(broadcast_parts)
         return broadcast
-#aki apenas redireciona  o  local que vai  ser salvo o arqivo txt e as informações que serão atribuidas.
+# aki apenas redireciona  o  local que vai  ser salvo o arqivo txt e as informações que serão atribuidas.
     desktop_path = os.path.expanduser('~/Desktop')
 
     # Nome do arquivo baseado no endereço IP
@@ -135,7 +141,9 @@ def salvar_informacoes_ip():
         messagebox.showerror(
             "Erro", f"Ocorreu um erro ao salvar o arquivo:\n{str(e)}")
 
-#abre o arquivo na tela .
+# abre o arquivo na tela .
+
+
 def abrir_arquivo():
     desktop_path = os.path.expanduser('~/Desktop')
     filename = f"{ip_entry.get().replace('/', '_')}.txt"
@@ -177,6 +185,6 @@ info_text.pack()
 
 root.mainloop()
 
-#sistema em Beta(1.0.0)
-#Desenvolvido  By: Buehno :)
-#contato:  https://linktr.ee/Ronaldo.Bueeno
+# sistema em Beta(1.0.0)
+# Desenvolvido  By: Buehno :)
+# contato:  https://linktr.ee/Ronaldo.Bueeno
