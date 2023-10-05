@@ -61,4 +61,5 @@ Este projeto está licenciado sob a Licença MIT - consulte o arquivo [LICENSE](
 
 ---
 
-Desenvolvido por [Ronaldo Bueno]([https://github.com/Buehno])
+Desenvolvido por [Ronaldo Bueno]([https://github.com/Buehno]) Classificação: ![271812758-e16a3755-cfb1-4e40-9979-88705f892cec](https://github.com/Buehno/Classificador_de_IPV4/assets/146307159/3a90476d-bc01-4967-a77c-69675660a946)
+
