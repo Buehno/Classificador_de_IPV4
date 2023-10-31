@@ -10,7 +10,13 @@ import socket
 import os
 import psutil
 import ctypes
-
+import subprocess
+import speedtest
+from getmac import get_mac_address
+import geocoder
+import platform
+import nmap
+from ping3 import ping, verbose_ping
 
 def criar_tabela():
     conn = sqlite3.connect('meu_banco_de_dados.db')
@@ -168,6 +174,82 @@ def salvar_e_mostrar_informacoes():
     else:
         messagebox.showerror(
             "Erro", "As informações não foram encontradas no banco de dados.")
+# Função para obter informações do roteador
+def obter_gateway_info():
+    gateways = psutil.net_if_addrs()
+    gateway_info = "Não foi possível obter informações do roteador"
+
+    for interface, addrs in gateways.items():
+        if "Wi-Fi" in interface or "Wireless" in interface:
+            connection_type = "Conectado via Wi-Fi"
+        elif "Ethernet" in interface:
+            connection_type = "Conectado via Ethernet"
+        for addr in addrs:
+            if addr.family == psutil.AF_LINK:
+                gateway_info = f"Endereço MAC do Roteador: {addr.address}"
+
+    return connection_type, gateway_info
+
+# Função para obter a localização com base no IP
+def obter_ip_location(ip_address):
+    try:
+        location = geocoder.ip(ip_address)
+        return f"Localização: {location.country} - {location.region} - {location.city}\nLatitude: {location.lat}, Longitude: {location.lng}"
+    except Exception as e:
+        return f"Erro ao obter localização: {str(e)}"
+
+# Função para obter informações de rede
+def obter_informacoes_de_rede():
+    host_name = socket.gethostname()
+    ip_address = socket.gethostbyname(host_name)
+    system_info = f"Nome do Host: {host_name}\nEndereço IP Local: {ip_address}\nSistema Operacional: {platform.system()} {platform.release()}"
+
+    # Obtenha o nome da rede Wi-Fi e a latência (ping)
+    wifi_name = "Não conectado à Wi-Fi"
+    ping_result = "Erro ao medir a latência"
+
+    try:
+        wifi_name = "Substitua por seu método de obter o nome da rede Wi-Fi"
+
+        # Medir a latência
+        target_host = "8.8.8.8"  # Exemplo: servidor DNS do Google
+        response_time = ping(target_host)
+        if response_time is not None:
+            ping_result = f"Latência (Ping) para {target_host}: {response_time:.2f} ms"
+        else:
+            ping_result = "Erro ao medir a latência"
+
+    except Exception as e:
+        wifi_name = "Erro ao obter o nome da rede Wi-Fi"
+        ping_result = "Erro ao medir a latência"
+
+    # Obtenha informações do roteador
+    connection_type, gateway_info = obter_gateway_info()
+
+    location_info = obter_ip_location(ip_address)
+
+    network_info = f"Nome da Rede Wi-Fi: {wifi_name}\n"
+    network_info += f"Latência (Ping): {ping_result}\n"
+    network_info += f"Tipo de Conexão: {connection_type}\n{gateway_info}"
+
+    # Inserir os dados coletados no banco de dados
+    conn = sqlite3.connect('dados_users.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        INSERT INTO users_data (host_name, ip_address, system_info, wifi_name, ping_result, connection_type, gateway_info, location_info)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (host_name, ip_address, system_info, wifi_name, ping_result, connection_type, gateway_info, location_info))
+
+    conn.commit()
+    conn.close()
+
+    info_text2.delete('1.0', tk.END)  # Limpe o texto anterior, se houver
+    info_text2.insert('1.0', system_info + "\n" + network_info + "\n" + location_info)
+
+# Crie a janela principal
+root = tk.Tk()
+root.title("Informações de Rede")
 
 # Configuração da janela Tkinter
 root = tk.Tk()
