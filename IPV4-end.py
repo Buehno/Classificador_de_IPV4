@@ -169,45 +169,6 @@ def salvar_e_mostrar_informacoes():
         messagebox.showerror(
             "Erro", "As informações não foram encontradas no banco de dados.")
 
-
-def obter_informacoes_de_rede():
-    host_name = socket.gethostname()
-    ip_address = socket.gethostbyname(host_name)
-    system_info = f"Nome do Host: {host_name}\nEndereço IP Local: {ip_address}\nSistema Operacional: {os.name}"
-
-    # Adicione as informações da rede
-    try:
-        interfaces = psutil.net_if_addrs()
-        for interface, addrs in interfaces.items():
-            for addr in addrs:
-                if addr.family == socket.AF_INET and not addr.address.startswith("127."):
-                    network_info = f"Nome da Rede: {interface}\nEndereço IP: {addr.address}\n"
-                    if addr.broadcast:
-                        network_info += f"Endereço de Broadcast: {addr.broadcast}\n"
-                    if addr.netmask:
-                        network_info += f"Máscara de Sub-rede: {addr.netmask}\n"
-
-                    # Obtenha informações adicionais sobre a placa de rede
-                    network_info += f"MAC Address: {psutil.net_if_stats()[interface].address}\n"
-
-                    # Obtenha informações sobre o tipo de segurança da rede (você pode ajustar isso de acordo com suas necessidades)
-                    # Substitua por suas informações reais
-                    network_info += f"Tipo de Segurança: WPA2"
-
-                    # Use a biblioteca ctypes para obter informações da rede no Windows
-                    network_info += f"Operadora: {ctypes.windll.iphlpapi.GetNetworkParamsEx(None)}\n"
-
-                    # Limpe o texto anterior, se houver
-                    info_text2.delete('1.0', tk.END)
-                    info_text2.insert('1.0', system_info + network_info)
-                    return
-    except Exception as e:
-        # Lida com exceções ao obter informações da rede
-        info_text2.delete('1.0', tk.END)
-        info_text2.insert(
-            '1.0', f"Erro ao obter informações de rede: {str(e)}")
-
-
 # Configuração da janela Tkinter
 root = tk.Tk()
 root.title("Minhas Definições IP")
