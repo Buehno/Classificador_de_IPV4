@@ -18,6 +18,7 @@ import platform
 import nmap
 from ping3 import ping, verbose_ping
 
+
 def criar_tabela():
     conn = sqlite3.connect('meu_banco_de_dados.db')
     cursor = conn.cursor()
@@ -175,6 +176,8 @@ def salvar_e_mostrar_informacoes():
         messagebox.showerror(
             "Erro", "As informações não foram encontradas no banco de dados.")
 # Função para obter informações do roteador
+
+
 def obter_gateway_info():
     gateways = psutil.net_if_addrs()
     gateway_info = "Não foi possível obter informações do roteador"
@@ -191,6 +194,8 @@ def obter_gateway_info():
     return connection_type, gateway_info
 
 # Função para obter a localização com base no IP
+
+
 def obter_ip_location(ip_address):
     try:
         location = geocoder.ip(ip_address)
@@ -199,6 +204,8 @@ def obter_ip_location(ip_address):
         return f"Erro ao obter localização: {str(e)}"
 
 # Função para obter informações de rede
+
+
 def obter_informacoes_de_rede():
     host_name = socket.gethostname()
     ip_address = socket.gethostbyname(host_name)
@@ -233,23 +240,12 @@ def obter_informacoes_de_rede():
     network_info += f"Tipo de Conexão: {connection_type}\n{gateway_info}"
 
     # Inserir os dados coletados no banco de dados
-    conn = sqlite3.connect('dados_users.db')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        INSERT INTO users_data (host_name, ip_address, system_info, wifi_name, ping_result, connection_type, gateway_info, location_info)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (host_name, ip_address, system_info, wifi_name, ping_result, connection_type, gateway_info, location_info))
-
-    conn.commit()
-    conn.close()
-
     info_text2.delete('1.0', tk.END)  # Limpe o texto anterior, se houver
-    info_text2.insert('1.0', system_info + "\n" + network_info + "\n" + location_info)
+    info_text2.insert('1.0', system_info + "\n" +
+                      network_info + "\n" + location_info)
+
 
 # Crie a janela principal
-root = tk.Tk()
-root.title("Informações de Rede")
 
 # Configuração da janela Tkinter
 root = tk.Tk()
