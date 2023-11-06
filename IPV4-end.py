@@ -17,23 +17,38 @@ import geocoder
 import platform
 import nmap
 from ping3 import ping, verbose_ping
+import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl import Workbook
+import requests
+
+# Função para salvar informações em um arquivo de texto
 
 
-def criar_tabela():
-    conn = sqlite3.connect('meu_banco_de_dados.db')
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS informacoes_ip (
-                      id INTEGER PRIMARY KEY,
-                      ip_address TEXT,
-                      classe_ip TEXT,
-                      classe_rede TEXT,
-                      status_sub_rede TEXT,
-                      mascara_sub_rede TEXT,
-                      id_rede TEXT,
-                      wild_card TEXT,
-                      broadcast TEXT)''')
-    conn.commit()
-    conn.close()
+def salvar_informacoes_em_txt(informacoes, arquivo):
+    with open(arquivo, 'w') as file:
+        file.write(informacoes)
+
+# Função para salvar informações em uma planilha Excel
+
+
+def salvar_informacoes_em_excel(informacoes, arquivo):
+    # Crie um arquivo Excel
+    wb = openpyxl.Workbook()
+    sheet = wb.active
+
+    # Organize os dados em colunas
+    colunas = ["Classe de IP", "Classe de Rede", "Status",
+               "Máscara de Sub-rede", "ID de Rede", "Wild Card", "Broadcast"]
+    for i, coluna in enumerate(colunas, 1):
+        sheet.cell(row=1, column=i, value=coluna)
+
+    info = informacoes.split('\n')
+    for i, linha in enumerate(info, 2):
+        sheet.cell(row=i, column=1, value=linha)
+
+    # Salve o arquivo Excel
+    wb.save(arquivo)
 
 
 def salvar_e_mostrar_informacoes():
@@ -43,6 +58,10 @@ def salvar_e_mostrar_informacoes():
         messagebox.showerror(
             "Erro", "Por favor, insira um endereço IP válido.")
         return
+
+    # Resto do código para coletar informações do IP
+
+    info_text.delete(1.0, tk.END)  # Limpa o widget de texto
 
     def Classe_IP(ip):
         if int(ip.split('.')[0]) < 128:
@@ -141,41 +160,41 @@ def salvar_e_mostrar_informacoes():
         broadcast_parts = []
 
         for w, id in zip(wildcard_parts, id_parts):
-            broadcast_part = str(int(w) + int(id))
+            broadcast_part = str(int(w) | int(id))
             broadcast_parts.append(broadcast_part)
 
         broadcast = ".".join(broadcast_parts)
         return broadcast
 
-    conn = sqlite3.connect('meu_banco_de_dados.db')
-    cursor = conn.cursor()
+    data = f"Classe de IP: {Classe_IP(ip)}\n"
+    data += f"Classe de Rede: {Classe_Rede(ip)}\n"
+    data += f"Status: {classe_sub_rede(ip)}\n"
+    data += f"Máscara de Sub-rede: {calculo_mascara(ip)}\n"
+    data += f"ID de Rede: {Id_da_rede(ip)}\n"
+    data += f"Wild Card: {wild_card()}\n"
+    data += f"Broadcast: {broad_cast()}\n"
 
-    # Execute consultas SQL para inserir as informações
-    cursor.execute("INSERT INTO informacoes_ip (ip_address, classe_ip, classe_rede, status_sub_rede, mascara_sub_rede, id_rede, wild_card, broadcast) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                   (ip, Classe_IP(ip), Classe_Rede(ip), classe_sub_rede(ip), calculo_mascara(ip), Id_da_rede(ip), wild_card(), broad_cast()))
+    # Corrija o problema da pasta de salvamento
+    pasta_salvamento = os.path.join(
+        os.path.expanduser("~"), "Downloads", "informacoes_ips")
+    os.makedirs(pasta_salvamento, exist_ok=True)
 
-    conn.commit()
+    # Caminhos para os arquivos
+    txt_file = os.path.join(pasta_salvamento, "informacoes_ip.txt")
+    excel_file = os.path.join(pasta_salvamento, "informacoes_ip.xlsx")
 
-    # Execute uma consulta SQL para buscar as informações com base no IP
-    cursor.execute("SELECT * FROM informacoes_ip WHERE ip_address = ?", (ip,))
-    data = cursor.fetchone()
+    # Salve as informações em um arquivo de texto
+    salvar_informacoes_em_txt(data, txt_file)
 
-    conn.close()
+    # Salve as informações em uma planilha Excel
+    salvar_informacoes_em_excel(data, excel_file)
 
     if data:
         info_text.delete(1.0, tk.END)  # Limpa o widget de texto
-        # Insira as informações do banco de dados no widget de texto
-        info_text.insert(tk.END, f"Classe de IP: {data[2]}\n")
-        info_text.insert(tk.END, f"Classe de Rede: {data[3]}\n")
-        info_text.insert(tk.END, f"Status: {data[4]}\n")
-        info_text.insert(tk.END, f"Máscara de Sub-rede: {data[5]}\n")
-        info_text.insert(tk.END, f"ID de Rede: {data[6]}\n")
-        info_text.insert(tk.END, f"Wild Card: {data[7]}\n")
-        info_text.insert(tk.END, f"Broadcast: {data[8]}\n")
+        info_text.insert(tk.END, data)
     else:
         messagebox.showerror(
             "Erro", "As informações não foram encontradas no banco de dados.")
-# Função para obter informações do roteador
 
 
 def obter_gateway_info():
@@ -198,56 +217,52 @@ def obter_gateway_info():
 
 def obter_ip_location(ip_address):
     try:
-        location = geocoder.ip(ip_address)
-        return f"Localização: {location.country} - {location.region} - {location.city}\nLatitude: {location.lat}, Longitude: {location.lng}"
+        url = f"http://ipinfo.io/{ip_address}/json"
+        response = requests.get(url)
+        data = response.json()
+        if 'city' in data and 'region' in data and 'country' in data:
+            return f"Localização: {data['country']} - {data['region']} - {data['city']}\nLatitude: {data['loc'].split(',')[0]}, Longitude: {data['loc'].split(',')[1]}"
+        else:
+            return "Localização não encontrada"
     except Exception as e:
         return f"Erro ao obter localização: {str(e)}"
 
-# Função para obter informações de rede
-
-
-def obter_informacoes_de_rede():
+def obter_informacoes_de_rede(info_text2):
     host_name = socket.gethostname()
     ip_address = socket.gethostbyname(host_name)
     system_info = f"Nome do Host: {host_name}\nEndereço IP Local: {ip_address}\nSistema Operacional: {platform.system()} {platform.release()}"
 
-    # Obtenha o nome da rede Wi-Fi e a latência (ping)
+    # Obtenha o nome da rede Wi-Fi
     wifi_name = "Não conectado à Wi-Fi"
-    ping_result = "Erro ao medir a latência"
 
-    try:
-        wifi_name = "Substitua por seu método de obter o nome da rede Wi-Fi"
+    # Obtenha informações da interface de rede
+    network_info = (
+        f"Informações de Rede:\n"
+        f"{system_info}\n"
+        f"{wifi_name}\n"
+    )
 
-        # Medir a latência
-        target_host = "8.8.8.8"  # Exemplo: servidor DNS do Google
-        response_time = ping(target_host)
-        if response_time is not None:
-            ping_result = f"Latência (Ping) para {target_host}: {response_time:.2f} ms"
-        else:
-            ping_result = "Erro ao medir a latência"
+    network_interfaces = psutil.net_if_addrs()
+    network_info += "\nInformações da Interface de Rede:\n"
+    for interface, addrs in network_interfaces.items():
+        network_info += f"Interface: {interface}\n"
+        for addr in addrs:
+            if addr.family == socket.AF_INET:
+                network_info += f"  Endereço IP: {addr.address}\n"
+                network_info += f"  Máscara de Sub-rede: {addr.netmask}\n"
+            if addr.family == psutil.AF_LINK:
+                network_info += f"  Endereço MAC: {addr.address}\n"
+        network_info += "\n"
 
-    except Exception as e:
-        wifi_name = "Erro ao obter o nome da rede Wi-Fi"
-        ping_result = "Erro ao medir a latência"
-
-    # Obtenha informações do roteador
-    connection_type, gateway_info = obter_gateway_info()
-
+    # Obtenha informações de localização com base no IP
     location_info = obter_ip_location(ip_address)
 
-    network_info = f"Nome da Rede Wi-Fi: {wifi_name}\n"
-    network_info += f"Latência (Ping): {ping_result}\n"
-    network_info += f"Tipo de Conexão: {connection_type}\n{gateway_info}"
-
-    # Inserir os dados coletados no banco de dados
+    # Atualize o widget de texto com as informações
     info_text2.delete('1.0', tk.END)  # Limpe o texto anterior, se houver
-    info_text2.insert('1.0', system_info + "\n" +
-                      network_info + "\n" + location_info)
-
+    network_info += f"{location_info}\n"
+    info_text2.insert('1.0', network_info)
 
 # Crie a janela principal
-
-# Configuração da janela Tkinter
 root = tk.Tk()
 root.title("Minhas Definições IP")
 
@@ -308,7 +323,7 @@ root.columnconfigure(0, weight=1)
 
 info_text.insert('1.0', "Insira um endereço IP para exibir informações.")
 # Chame a função para exibir informações de rede automaticamente
-obter_informacoes_de_rede()
+obter_informacoes_de_rede(info_text2)
 root.mainloop()
 # Desenvolvido  By: Buehno :)
 # contato:  https://linktr.ee/Ronaldo.Bueeno
